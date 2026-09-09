@@ -105,6 +105,19 @@ pub mod layout {
     pub use super::wire::*;
 }
 
+
+// Fuzzing-only helper: exposes the crate-private `merkle::recover` erasure-
+// recovery entry point so an external fuzz harness can drive it directly
+// with an adversarial, possibly malformed/insufficient set of shreds,
+// without needing to construct a full runtime `Bank`.
+pub fn recover_for_fuzzing(
+    shreds: Vec<Shred>,
+    reed_solomon_cache: &crate::shredder::ReedSolomonCache,
+) -> Result<Vec<Shred>, Error> {
+    let recovered: Result<Vec<Shred>, Error> = merkle::recover(shreds, reed_solomon_cache)?.collect();
+    recovered
+}
+
 pub type Nonce = u32;
 const_assert_eq!(SIZE_OF_NONCE, 4);
 pub const SIZE_OF_NONCE: usize = std::mem::size_of::<Nonce>();
