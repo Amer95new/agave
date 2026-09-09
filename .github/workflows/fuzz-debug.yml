@@ -11,5 +11,29 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Open interactive debug session (upterm)
-        uses: lhotari/action-upterm@v1
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly
+          cargo install cargo-fuzz
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev clang
+
+      - name: Build fuzz target
+        working-directory: fuzz
+        run: cargo +nightly fuzz build fuzz_shred_deserialize 2>&1 | tee /tmp/build.log
+
+      - name: Run fuzzer
+        working-directory: fuzz
+        run: |
+          timeout 1500 cargo +nightly fuzz run fuzz_shred_deserialize -j 4 -- -jobs=4 -workers=4 -max_total_time=1400 2>&1 | tee /tmp/fuzzrun.log || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-results
+          path: |
+            /tmp/build.log
+            /tmp/fuzzrun.log
+            fuzz/artifacts/
+          if-no-files-found: warn
