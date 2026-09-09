@@ -1,1 +1,15 @@
+name: agave-fuzz-debug
+on:
+  workflow_dispatch:
 
+jobs:
+  fuzz-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Open interactive debug session
+        uses: mxschmitt/action-tmate@v3
