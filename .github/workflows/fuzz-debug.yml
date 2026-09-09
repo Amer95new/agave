@@ -18,22 +18,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libclang-dev clang
 
-      - name: Build fuzz target
+      - name: Build recover fuzz target
         working-directory: fuzz
-        run: cargo +nightly fuzz build fuzz_shred_deserialize 2>&1 | tee /tmp/build.log
+        run: cargo +nightly fuzz build fuzz_shred_recover 2>&1 | tee /tmp/build_recover.log
 
-      - name: Run fuzzer
+      - name: Run recover fuzzer
         working-directory: fuzz
         run: |
-          timeout 1500 cargo +nightly fuzz run fuzz_shred_deserialize -j 4 -- -jobs=4 -workers=4 -max_total_time=1400 2>&1 | tee /tmp/fuzzrun.log || true
+          timeout 4000 cargo +nightly fuzz run fuzz_shred_recover -j 4 -- -jobs=4 -workers=4 -max_total_time=3900 2>&1 | tee /tmp/fuzzrun_recover.log || true
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-results
+          name: fuzz-results-recover
           path: |
-            /tmp/build.log
-            /tmp/fuzzrun.log
+            /tmp/build_recover.log
+            /tmp/fuzzrun_recover.log
             fuzz/artifacts/
           if-no-files-found: warn
