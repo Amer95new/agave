@@ -13,11 +13,25 @@ solana-pubkey = { version = "4.3.0", default-features = false }
 solana-account = "4.7.0"
 solana-instruction = "3.5.0"
 solana-sdk-ids = "3.1.0"
-solana-svm-feature-set = { version = "4.4.0-alpha.3", features = ["agave-unstable-api"] }
-solana-svm-timings = { version = "4.4.0-alpha.3", features = ["agave-unstable-api"] }
-solana-svm-type-overrides = { version = "4.4.0-alpha.3", features = ["agave-unstable-api"] }
-solana-svm-callback = { version = "4.4.0-alpha.3", features = ["agave-unstable-api"] }
-solana-svm-log-collector = { version = "4.4.0-alpha.3", features = ["agave-unstable-api"] }
+[dependencies.solana-svm-feature-set]
+path = "../svm-feature-set"
+features = ["agave-unstable-api"]
+
+[dependencies.solana-svm-timings]
+path = "../svm-timings"
+features = ["agave-unstable-api"]
+
+[dependencies.solana-svm-type-overrides]
+path = "../svm-type-overrides"
+features = ["agave-unstable-api"]
+
+[dependencies.solana-svm-callback]
+path = "../svm-callback"
+features = ["agave-unstable-api"]
+
+[dependencies.solana-svm-log-collector]
+path = "../svm-log-collector"
+features = ["agave-unstable-api"]
 
 [dependencies.solana-ledger]
 path = "../ledger"
