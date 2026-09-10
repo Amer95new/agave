@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-check:
+  fuzz-system:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,10 +22,18 @@ jobs:
         working-directory: fuzz
         run: cargo +nightly fuzz build fuzz_system_process_instruction 2>&1 | tee /tmp/build_system_fuzz.log
 
+      - name: Run system process_instruction fuzzer
+        working-directory: fuzz
+        run: |
+          timeout 4000 cargo +nightly fuzz run fuzz_system_process_instruction -j 4 -- -jobs=4 -workers=4 -max_total_time=3900 2>&1 | tee /tmp/fuzzrun_system.log || true
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-check-results
-          path: /tmp/build_system_fuzz.log
+          name: fuzz-results-system
+          path: |
+            /tmp/build_system_fuzz.log
+            /tmp/fuzzrun_system.log
+            fuzz/artifacts/
           if-no-files-found: warn
