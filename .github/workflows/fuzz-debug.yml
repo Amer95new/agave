@@ -3,34 +3,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  mutants:
+  build-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Install tools
+      - name: Install toolchain
         run: |
           sudo apt-get update
           sudo apt-get install -y libclang-dev clang
-          cargo install cargo-mutants
+          rustup toolchain install nightly
+          cargo install cargo-fuzz
 
-      - name: List mutants (fast, no build)
-        run: cargo mutants --list -p solana-system-program 2>&1 | tee /tmp/mutants_list.log
-
-      - name: Run mutation testing (time-capped)
-        run: |
-          timeout 4500 cargo mutants -p solana-system-program --features agave-unstable-api 2>&1 | tee /tmp/mutants_run.log || true
+      - name: Build system process_instruction fuzz target
+        working-directory: fuzz
+        run: cargo +nightly fuzz build fuzz_system_process_instruction 2>&1 | tee /tmp/build_system_fuzz.log
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mutants-results
-          path: |
-            /tmp/mutants_list.log
-            /tmp/mutants_run.log
-            mutants.out/
+          name: build-check-results
+          path: /tmp/build_system_fuzz.log
           if-no-files-found: warn
