@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  static-analysis:
+  mutants:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -15,36 +15,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libclang-dev clang
-          rustup component add clippy
-          python3 -m pip install --break-system-packages semgrep
+          cargo install cargo-mutants
 
-      - name: clippy on system program (pedantic)
-        working-directory: programs/system
-        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_system.log || true
+      - name: List mutants (fast, no build)
+        run: cargo mutants --list -p solana-system-program 2>&1 | tee /tmp/mutants_list.log
 
-      - name: clippy on bpf_loader program (pedantic)
-        working-directory: programs/bpf_loader
-        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_bpf_loader.log || true
-
-      - name: manual unsafe grep (system + bpf_loader)
+      - name: Run mutation testing (time-capped)
         run: |
-          echo "=== unsafe in programs/system/src ===" > /tmp/unsafe_grep_programs.log
-          grep -rn "unsafe " programs/system/src --include="*.rs" >> /tmp/unsafe_grep_programs.log || true
-          echo "=== unsafe in programs/bpf_loader/src ===" >> /tmp/unsafe_grep_programs.log
-          grep -rn "unsafe " programs/bpf_loader/src --include="*.rs" >> /tmp/unsafe_grep_programs.log || true
-
-      - name: semgrep (rust + security-audit rulesets)
-        run: |
-          semgrep --config p/rust --config p/security-audit programs/system/src programs/bpf_loader/src 2>&1 | tee /tmp/semgrep_programs.log || true
+          timeout 4500 cargo mutants -p solana-system-program --features agave-unstable-api 2>&1 | tee /tmp/mutants_run.log || true
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: programs-analysis-results
+          name: mutants-results
           path: |
-            /tmp/clippy_system.log
-            /tmp/clippy_bpf_loader.log
-            /tmp/unsafe_grep_programs.log
-            /tmp/semgrep_programs.log
+            /tmp/mutants_list.log
+            /tmp/mutants_run.log
+            mutants.out/
           if-no-files-found: warn
