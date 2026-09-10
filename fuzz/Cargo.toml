@@ -10,9 +10,23 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 solana-pubkey = { version = "4.3.0", default-features = false }
+solana-account = "4.7.0"
+solana-instruction = "3.5.0"
+solana-sdk-ids = "3.1.0"
+solana-svm-feature-set = "4.4.0-alpha.3"
+solana-svm-timings = "4.4.0-alpha.3"
+solana-svm-type-overrides = "4.4.0-alpha.3"
 
 [dependencies.solana-ledger]
 path = "../ledger"
+features = ["agave-unstable-api"]
+
+[dependencies.solana-program-runtime]
+path = "../program-runtime"
+features = ["agave-unstable-api", "dev-context-only-utils"]
+
+[dependencies.solana-system-program]
+path = "../programs/system"
 features = ["agave-unstable-api"]
 
 [[bin]]
@@ -22,15 +36,22 @@ test = false
 doc = false
 bench = false
 
-[workspace]
-
-[patch.crates-io]
-librocksdb-sys = { git = "https://github.com/anza-xyz/rust-rocksdb", rev = "4dba80dfe9434e595a971f5b2985ff9ba4fb31e7" }
-rocksdb = { git = "https://github.com/anza-xyz/rust-rocksdb", rev = "4dba80dfe9434e595a971f5b2985ff9ba4fb31e7" }
-
 [[bin]]
 name = "fuzz_shred_recover"
 path = "fuzz_targets/fuzz_shred_recover.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "fuzz_system_process_instruction"
+path = "fuzz_targets/fuzz_system_process_instruction.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+
+[patch.crates-io]
+librocksdb-sys = { git = "https://github.com/anza-xyz/rust-rocksdb", rev = "4dba80dfe9434e595a971f5b2985ff9ba4fb31e7" }
+rocksdb = { git = "https://github.com/anza-xyz/rust-rocksdb", rev = "4dba80dfe9434e595a971f5b2985ff9ba4fb31e7" }
