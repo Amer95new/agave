@@ -3,37 +3,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  fuzz-debug:
+  static-analysis:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Install toolchain
-        run: |
-          rustup toolchain install nightly
-          cargo install cargo-fuzz
-          sudo apt-get update
-          sudo apt-get install -y libclang-dev clang
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
 
-      - name: Build recover fuzz target
-        working-directory: fuzz
-        run: cargo +nightly fuzz build fuzz_shred_recover 2>&1 | tee /tmp/build_recover.log
+      - name: Run cargo audit
+        run: cargo audit 2>&1 | tee /tmp/audit.log || true
 
-      - name: Run recover fuzzer
-        working-directory: fuzz
-        run: |
-          timeout 4000 cargo +nightly fuzz run fuzz_shred_recover -j 4 -- -jobs=4 -workers=4 -max_total_time=3900 2>&1 | tee /tmp/fuzzrun_recover.log || true
+      - name: Run clippy on ledger crate (pedantic)
+        working-directory: ledger
+        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_ledger.log || true
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-results-recover
+          name: static-analysis-results
           path: |
-            /tmp/build_recover.log
-            /tmp/fuzzrun_recover.log
-            fuzz/artifacts/
+            /tmp/audit.log
+            /tmp/clippy_ledger.log
           if-no-files-found: warn
