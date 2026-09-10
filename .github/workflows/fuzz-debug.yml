@@ -5,7 +5,7 @@ on:
 jobs:
   static-analysis:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -16,48 +16,35 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libclang-dev clang
           rustup component add clippy
-          cargo install cargo-audit
-          cargo install cargo-geiger
           python3 -m pip install --break-system-packages semgrep
 
-      - name: cargo audit
-        run: cargo audit 2>&1 | tee /tmp/audit.log || true
+      - name: clippy on system program (pedantic)
+        working-directory: programs/system
+        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_system.log || true
 
-      - name: clippy on ledger (pedantic)
-        working-directory: ledger
-        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_ledger.log || true
+      - name: clippy on bpf_loader program (pedantic)
+        working-directory: programs/bpf_loader
+        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_bpf_loader.log || true
 
-      - name: clippy on turbine (pedantic)
-        working-directory: turbine
-        run: cargo clippy --no-deps --features agave-unstable-api -- -W clippy::pedantic 2>&1 | tee /tmp/clippy_turbine.log || true
-
-      - name: cargo-geiger on ledger (unsafe census)
-        working-directory: ledger
-        run: cargo geiger --features agave-unstable-api 2>&1 | tee /tmp/geiger_ledger.log || echo "geiger failed, see fallback grep below" >> /tmp/geiger_ledger.log
-
-      - name: fallback manual unsafe grep (ledger + turbine + core/window_service.rs)
+      - name: manual unsafe grep (system + bpf_loader)
         run: |
-          echo "=== unsafe blocks in ledger/src ===" > /tmp/unsafe_grep.log
-          grep -rn "unsafe " ledger/src --include="*.rs" >> /tmp/unsafe_grep.log || true
-          echo "=== unsafe blocks in turbine/src ===" >> /tmp/unsafe_grep.log
-          grep -rn "unsafe " turbine/src --include="*.rs" >> /tmp/unsafe_grep.log || true
-          echo "=== unsafe blocks in core/src/window_service.rs ===" >> /tmp/unsafe_grep.log
-          grep -n "unsafe " core/src/window_service.rs >> /tmp/unsafe_grep.log || true
+          echo "=== unsafe in programs/system/src ===" > /tmp/unsafe_grep_programs.log
+          grep -rn "unsafe " programs/system/src --include="*.rs" >> /tmp/unsafe_grep_programs.log || true
+          echo "=== unsafe in programs/bpf_loader/src ===" >> /tmp/unsafe_grep_programs.log
+          grep -rn "unsafe " programs/bpf_loader/src --include="*.rs" >> /tmp/unsafe_grep_programs.log || true
 
       - name: semgrep (rust + security-audit rulesets)
         run: |
-          semgrep --config p/rust --config p/security-audit ledger/src turbine/src core/src/window_service.rs 2>&1 | tee /tmp/semgrep.log || true
+          semgrep --config p/rust --config p/security-audit programs/system/src programs/bpf_loader/src 2>&1 | tee /tmp/semgrep_programs.log || true
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: static-analysis-results
+          name: programs-analysis-results
           path: |
-            /tmp/audit.log
-            /tmp/clippy_ledger.log
-            /tmp/clippy_turbine.log
-            /tmp/geiger_ledger.log
-            /tmp/unsafe_grep.log
-            /tmp/semgrep.log
+            /tmp/clippy_system.log
+            /tmp/clippy_bpf_loader.log
+            /tmp/unsafe_grep_programs.log
+            /tmp/semgrep_programs.log
           if-no-files-found: warn
