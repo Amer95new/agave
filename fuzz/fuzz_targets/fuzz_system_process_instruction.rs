@@ -63,7 +63,7 @@ fuzz_target!(|data: &[u8]| {
         .unwrap_or_else(native_loader::id);
     let is_builtin = native_loader::check_id(&program_owner);
 
-    let feature_set = SVMFeatureSet::all_enabled();
+    let feature_set = &SVMFeatureSet::all_enabled();
 
     with_mock_invoke_context_with_feature_set!(
         invoke_context,
