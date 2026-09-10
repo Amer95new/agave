@@ -8,6 +8,7 @@ use {
         invoke_context::mock_compile_message, loaded_programs::ProgramCacheForTxBatch,
         program_cache_entry::ProgramCacheEntry, with_mock_invoke_context_with_feature_set,
     },
+    solana_program_runtime::solana_sbpf::program::BuiltinFunctionDefinition,
     solana_pubkey::Pubkey,
     solana_sdk_ids::{native_loader, system_program},
     solana_svm_feature_set::SVMFeatureSet,
