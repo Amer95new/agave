@@ -2,7 +2,7 @@
 
 use {
     libfuzzer_sys::fuzz_target,
-    solana_ledger::{shred::Shred, shredder::ReedSolomonCache},
+    solana_ledger::shred::{Shred, ReedSolomonCache},
 };
 
 // Fuzz target for Turbine erasure-coding RECOVERY: given an adversarial,
