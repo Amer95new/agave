@@ -13,6 +13,8 @@ jobs:
 
       - name: Install tools
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev clang
           rustup component add clippy
           cargo install cargo-audit
           cargo install cargo-geiger
